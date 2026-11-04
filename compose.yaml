@@ -1,0 +1,75 @@
+# Nome padrão do projeto no Docker Compose.
+# Pode ser sobrescrito pela variável COMPOSE_PROJECT_NAME no arquivo .env.
+name: "${COMPOSE_PROJECT_NAME:-php-docker-starter}"
+
+services:
+  php:
+    # Constrói a imagem PHP a partir do Dockerfile do projeto.
+    build:
+      # O contexto é a raiz porque o Dockerfile precisará acessar
+      # arquivos localizados fora do diretório docker/php.
+      context: .
+
+      # Caminho do Dockerfile relativo ao contexto de construção.
+      dockerfile: docker/php/Dockerfile
+
+    # Define o diretório padrão dos comandos executados no contêiner.
+    working_dir: /var/www/html
+
+    # Passa somente as variáveis necessárias para a aplicação.
+    #
+    # Não importamos automaticamente todo o arquivo .env para evitar
+    # fornecer ao contêiner variáveis que ele não precisa conhecer.
+    environment:
+      APP_ENV: "${APP_ENV:-local}"
+      APP_DEBUG: "${APP_DEBUG:-true}"
+
+    # Monta o projeto dentro do contêiner para refletir imediatamente
+    # as alterações feitas no código durante o desenvolvimento.
+    volumes:
+      - ./:/var/www/html
+
+    # Reinicia o serviço após falhas ou reinicialização do Docker,
+    # exceto quando o serviço for parado manualmente.
+    restart: unless-stopped
+
+    # O PHP fica somente na rede interna.
+    # A porta 9000 do PHP-FPM não será publicada no computador.
+    networks:
+      - app-network
+
+  nginx:
+    # Usa a linha estável 1.28 da imagem oficial do Nginx.
+    # Não usamos a tag "latest", pois ela pode mudar inesperadamente.
+    image: nginx:1.28-alpine
+
+    # Garante que o contêiner PHP seja iniciado antes do Nginx.
+    # Neste estágio, isso não representa uma verificação de saúde.
+    depends_on:
+      - php
+
+    # Publica apenas o Nginx para acesso pelo computador.
+    # APP_PORT será lida do .env e terá 8080 como valor padrão.
+    ports:
+      - "${APP_PORT:-8080}:80"
+
+    volumes:
+      # O Nginx precisa ler os arquivos públicos da aplicação.
+      # O modo somente leitura reduz alterações acidentais pelo serviço.
+      - ./:/var/www/html:ro
+
+      # Substitui a configuração padrão do servidor Nginx.
+      # O modo somente leitura impede alterações pelo contêiner.
+      - ./docker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+
+    restart: unless-stopped
+
+    # Nginx e PHP precisam compartilhar a mesma rede para que
+    # o endereço interno php:9000 possa ser resolvido.
+    networks:
+      - app-network
+
+networks:
+  # Rede privada usada na comunicação entre os serviços.
+  app-network:
+    driver: bridge

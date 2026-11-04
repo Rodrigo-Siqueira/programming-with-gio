@@ -1,0 +1,44 @@
+{
+    "name": "rodrigo/php-docker-starter",
+    "description": "Estação base Docker para desenvolvimento de aplicações PHP.",
+    "type": "project",
+    "license": "proprietary",
+    "require": {
+        "php": "^8.5",
+        "ext-intl": "*",
+        "ext-pdo": "*",
+        "ext-pdo_mysql": "*",
+        "ext-zip": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/App/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "allow-plugins": {},
+        "optimize-autoloader": true,
+        "platform-check": true,
+        "sort-packages": true
+    },
+    "scripts": {
+        "check": [
+            "@validate-config",
+            "@check-platform"
+        ],
+        "validate-config": [
+            "@composer validate --strict"
+        ],
+        "check-platform": [
+            "@composer check-platform-reqs"
+        ],
+        "refresh-autoload": [
+            "@composer dump-autoload"
+        ]
+    }
+}

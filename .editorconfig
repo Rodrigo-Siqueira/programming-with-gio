@@ -1,0 +1,145 @@
+
+# ======================================================================
+# PHP Docker Starter
+# Padronização básica dos arquivos do projeto
+# ======================================================================
+#
+# O EditorConfig é interpretado por editores compatíveis.
+# Algumas IDEs podem precisar de uma extensão específica.
+#
+# Este arquivo controla aspectos como:
+#
+# - codificação;
+# - final de linha;
+# - indentação;
+# - espaços desnecessários;
+# - linha final;
+# - tabulação do Makefile.
+# ======================================================================
+
+
+# Indica que este é o arquivo EditorConfig principal.
+# O editor não deverá procurar outras configurações em diretórios acima.
+root = true
+
+
+# ======================================================================
+# CONFIGURAÇÃO PADRÃO
+# ======================================================================
+# As regras desta seção serão aplicadas a todos os arquivos.
+[*]
+
+# Utiliza UTF-8 como codificação padrão.
+charset = utf-8
+
+# Utiliza o padrão de final de linha do Linux.
+#
+# Isso evita diferenças entre Linux, Windows e macOS.
+end_of_line = lf
+
+# Insere uma quebra de linha no final dos arquivos.
+insert_final_newline = true
+
+# Remove espaços em branco no final das linhas.
+trim_trailing_whitespace = true
+
+# Utiliza espaços para indentação por padrão.
+indent_style = space
+
+# Define quatro espaços como indentação padrão.
+indent_size = 4
+
+
+# ======================================================================
+# PHP
+# ======================================================================
+[*.php]
+
+# Arquivos PHP utilizarão quatro espaços.
+indent_style = space
+indent_size = 4
+
+
+# ======================================================================
+# YAML
+# ======================================================================
+[*.{yaml,yml}]
+
+# Arquivos YAML normalmente utilizam dois espaços.
+#
+# Tabulações não devem ser usadas em YAML.
+indent_style = space
+indent_size = 2
+
+
+# ======================================================================
+# JSON
+# ======================================================================
+[*.json]
+
+# O projeto utilizará quatro espaços em arquivos JSON,
+# mantendo o padrão aplicado ao composer.json.
+indent_style = space
+indent_size = 4
+
+
+# ======================================================================
+# ARQUIVOS INI E CONFIGURAÇÕES
+# ======================================================================
+[*.{ini,conf}]
+
+# Arquivos de configuração utilizarão quatro espaços quando
+# houver necessidade de indentação.
+indent_style = space
+indent_size = 4
+
+
+# ======================================================================
+# DOCKERFILE
+# ======================================================================
+[{Dockerfile,*.Dockerfile}]
+
+# Dockerfiles utilizarão quatro espaços nas instruções multilinha.
+indent_style = space
+indent_size = 4
+
+
+# ======================================================================
+# SHELL SCRIPTS
+# ======================================================================
+[*.{sh,bash}]
+
+# Scripts shell utilizarão quatro espaços.
+indent_style = space
+indent_size = 4
+
+
+# ======================================================================
+# MAKEFILE
+# ======================================================================
+# Receitas do Makefile exigem caracteres de tabulação reais.
+#
+# Sem essa configuração, alguns editores podem substituir as
+# tabulações por espaços e causar o erro:
+#
+# missing separator
+[{Makefile,makefile,GNUmakefile}]
+
+indent_style = tab
+indent_size = 4
+
+
+# ======================================================================
+# MARKDOWN
+# ======================================================================
+[*.md]
+
+# Mantém espaços no final das linhas Markdown.
+#
+# Em Markdown, dois espaços no final podem representar
+# uma quebra de linha intencional.
+trim_trailing_whitespace = false
+
+# Mantém a indentação dos blocos de texto com quatro espaços.
+indent_style = space
+indent_size = 4

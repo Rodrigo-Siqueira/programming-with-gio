@@ -1,0 +1,123 @@
+# ======================================================================
+# PHP Docker Starter
+# Arquivos excluídos do contexto de construção do Docker
+# ======================================================================
+#
+# O Docker envia o contexto definido no compose.yaml para o processo
+# de construção da imagem.
+#
+# No projeto, o contexto é a raiz:
+#
+# build:
+#   context: .
+#
+# Este arquivo reduz o contexto e evita o envio desnecessário de
+# credenciais, dependências, metadados e arquivos temporários.
+# ======================================================================
+
+
+# ----------------------------------------------------------------------
+# Git
+# ----------------------------------------------------------------------
+# O histórico e as configurações do Git não são necessários no build.
+.git/
+.gitignore
+.gitattributes
+
+
+# ----------------------------------------------------------------------
+# Variáveis de ambiente
+# ----------------------------------------------------------------------
+# O arquivo local pode conter dados sensíveis e não deve entrar
+# no contexto de construção.
+.env
+.env.local
+.env.*.local
+
+# O .env.example pode permanecer disponível no contexto porque contém
+# apenas valores de exemplo e documenta a configuração do projeto.
+# Por isso, .env.example não está listado entre as exclusões.
+
+
+# ----------------------------------------------------------------------
+# Dependências PHP
+# ----------------------------------------------------------------------
+# As dependências locais não devem ser enviadas ao build.
+# Quando necessário em uma imagem de produção, o Composer deve
+# instalá-las durante uma etapa específica da construção.
+vendor/
+
+
+# ----------------------------------------------------------------------
+# Editor e IDE
+# ----------------------------------------------------------------------
+.vscode/
+.idea/
+
+*.code-workspace
+*.swp
+*.swo
+
+
+# ----------------------------------------------------------------------
+# Sistema operacional
+# ----------------------------------------------------------------------
+.DS_Store
+.AppleDouble
+.LSOverride
+
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+.directory
+.Trash-*
+
+
+# ----------------------------------------------------------------------
+# Testes, cobertura e caches
+# ----------------------------------------------------------------------
+.phpunit.cache/
+.phpunit.result.cache
+.phpstan.cache
+.psalm-cache/
+.php-cs-fixer.cache
+
+coverage/
+build/
+
+
+# ----------------------------------------------------------------------
+# Logs e arquivos temporários
+# ----------------------------------------------------------------------
+*.log
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
+*.orig
+*.rej
+
+
+# ----------------------------------------------------------------------
+# Arquivos temporários da aplicação
+# ----------------------------------------------------------------------
+storage/cache/
+storage/sessions/
+storage/tmp/
+
+
+# ----------------------------------------------------------------------
+# Documentação e arquivos operacionais
+# ----------------------------------------------------------------------
+# Estes arquivos não são necessários para construir a imagem PHP.
+README.md
+Makefile
+
+
+# ----------------------------------------------------------------------
+# Arquivos avulsos
+# ----------------------------------------------------------------------
+composer.phar
+build-php.log

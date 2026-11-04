@@ -1,0 +1,136 @@
+# ======================================================================
+# PHP Docker Starter
+# Arquivos e diretórios que não devem ser versionados
+# ======================================================================
+
+
+# ----------------------------------------------------------------------
+# Variáveis de ambiente
+# ----------------------------------------------------------------------
+# O arquivo .env pode conter configurações específicas do computador,
+# senhas, tokens e outras informações sensíveis.
+.env
+
+# Ignora variações locais de ambiente.
+.env.local
+.env.*.local
+
+# O arquivo .env.example NÃO deve ser ignorado.
+# Ele documenta as variáveis necessárias e deve ser versionado.
+
+
+# ----------------------------------------------------------------------
+# Dependências PHP
+# ----------------------------------------------------------------------
+# O diretório vendor é gerado pelo Composer a partir do composer.lock.
+# Ele não deve ser armazenado no repositório.
+/vendor/
+
+# O composer.lock NÃO deve ser ignorado.
+# Como esta estação é um projeto, o lockfile deve ser versionado para
+# garantir instalações previsíveis e reproduzíveis.
+
+
+# ----------------------------------------------------------------------
+# Testes e cobertura
+# ----------------------------------------------------------------------
+# Cache criado pelo PHPUnit.
+/.phpunit.cache/
+
+# Formato antigo de cache do PHPUnit.
+.phpunit.result.cache
+
+# Relatórios de cobertura de testes.
+/coverage/
+
+# Outros relatórios gerados por ferramentas de teste.
+/build/
+
+
+# ----------------------------------------------------------------------
+# Análise estática e qualidade de código
+# ----------------------------------------------------------------------
+# Cache do PHPStan.
+/.phpstan.cache
+
+# Cache do Psalm.
+/.psalm-cache/
+
+# Cache de ferramentas de correção de estilo.
+.php-cs-fixer.cache
+
+
+# ----------------------------------------------------------------------
+# Logs
+# ----------------------------------------------------------------------
+# Ignora arquivos de log gerados localmente.
+*.log
+
+# Mantém um arquivo vazio de referência caso um diretório de logs
+# precise ser versionado no futuro.
+!storage/logs/.gitkeep
+
+
+# ----------------------------------------------------------------------
+# Arquivos temporários da aplicação
+# ----------------------------------------------------------------------
+# Esses diretórios ainda não precisam existir.
+# As regras já deixam a estação preparada para futuras aplicações.
+/storage/cache/
+/storage/sessions/
+/storage/tmp/
+
+
+# ----------------------------------------------------------------------
+# Editores e IDEs
+# ----------------------------------------------------------------------
+# Visual Studio Code.
+.vscode/
+
+# JetBrains PhpStorm e IntelliJ IDEA.
+.idea/
+
+# Vim.
+*.swp
+*.swo
+*~
+
+# Arquivos de projeto de alguns editores.
+*.code-workspace
+
+
+# ----------------------------------------------------------------------
+# Sistema operacional
+# ----------------------------------------------------------------------
+# macOS.
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows.
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux e gerenciadores de arquivos.
+.directory
+.Trash-*
+
+
+# ----------------------------------------------------------------------
+# Arquivos temporários e backups
+# ----------------------------------------------------------------------
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
+*.orig
+*.rej
+
+
+# ----------------------------------------------------------------------
+# Relatórios e arquivos gerados localmente
+# ----------------------------------------------------------------------
+build-php.log
+composer.phar
