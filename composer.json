@@ -1,6 +1,6 @@
 {
-    "name": "rodrigo/php-docker-starter",
-    "description": "Estação base Docker para desenvolvimento de aplicações PHP.",
+    "name": "rodrigo/programming-with-gio",
+    "description": "Projeto de estudo PHP desenvolvido durante o curso Programming with Gio.",
     "type": "project",
     "license": "proprietary",
     "require": {

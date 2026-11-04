@@ -119,10 +119,11 @@ help:
 # 4. inicia os serviços;
 # 5. instala as dependências PHP.
 setup: env config build up install
-	@printf '%s\n' \
+	@. ./.env; \
+	printf '%s\n' \
 		'' \
 		'Ambiente preparado com sucesso.' \
-		'Acesse: http://localhost:$${APP_PORT:-8080}' \
+		"Aplicação disponível em: http://localhost:$${APP_PORT:-8080}" \
 		''
 
 
