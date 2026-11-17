@@ -3,21 +3,13 @@
 # ----------------------------------------------------------------------
 # Estágio auxiliar: Composer
 # ----------------------------------------------------------------------
-# Utilizamos a imagem oficial do Composer apenas para copiar o executável.
-# O conteúdo restante dessa imagem não será incluído na imagem final.
+# Utiliza a imagem oficial somente para obter o executável do Composer.
 FROM composer:2 AS composer
 
 # ----------------------------------------------------------------------
 # Imagem principal: PHP-FPM
 # ----------------------------------------------------------------------
-# PHP 8.5:
-#   Linha estável utilizada pela estação.
-#
-# FPM:
-#   Permite que o Nginx encaminhe requisições PHP via FastCGI.
-#
-# Alpine:
-#   Sistema-base compacto utilizado pelo contêiner.
+# PHP-FPM recebe as requisições encaminhadas pelo Nginx via FastCGI.
 FROM php:8.5-fpm-alpine
 
 # ----------------------------------------------------------------------
@@ -27,17 +19,41 @@ LABEL org.opencontainers.image.title="PHP Docker Starter"
 LABEL org.opencontainers.image.description="Ambiente base para desenvolvimento de aplicações PHP"
 
 # ----------------------------------------------------------------------
-# Bibliotecas necessárias durante a execução
+# Alinhamento do usuário do contêiner com o usuário do host
 # ----------------------------------------------------------------------
+# O PHP-FPM executa como www-data.
+#
+# O alinhamento de UID e GID evita que arquivos criados pelo PHP
+# dentro do bind mount pertençam ao usuário root no Linux.
+ARG HOST_UID=1000
+ARG HOST_GID=1000
+
+# shadow fornece groupmod e usermod no Alpine.
+#
+# O pacote é removido depois da alteração porque não é necessário
+# durante a execução da aplicação.
+RUN apk add --no-cache shadow \
+    && groupmod -g "${HOST_GID}" www-data \
+    && usermod -u "${HOST_UID}" -g "${HOST_GID}" www-data \
+    && apk del shadow
+
+# ----------------------------------------------------------------------
+# Ferramentas e bibliotecas necessárias durante a execução
+# ----------------------------------------------------------------------
+# git:
+#   Permite ao Composer obter pacotes por repositórios Git.
+#
+# unzip:
+#   Permite ao Composer extrair pacotes distribuídos em ZIP.
+#
 # icu-libs:
 #   Bibliotecas utilizadas pela extensão intl.
 #
 # libzip:
 #   Biblioteca utilizada pela extensão zip.
-#
-# --no-cache:
-#   Não mantém o índice do gerenciador de pacotes dentro da imagem.
 RUN apk add --no-cache \
+    git \
+    unzip \
     icu-libs \
     libzip
 
@@ -50,33 +66,24 @@ RUN apk add --no-cache \
 # libzip-dev:
 #   Cabeçalhos necessários para compilar zip.
 #
-# O grupo virtual .build-deps facilita a remoção dessas dependências
-# depois que as extensões forem compiladas.
+# O grupo virtual .build-deps será removido depois da compilação.
 RUN apk add --no-cache --virtual .build-deps \
     icu-dev \
     libzip-dev
 
 # ----------------------------------------------------------------------
-# Configuração da extensão intl
-# ----------------------------------------------------------------------
-# A configuração explícita facilita a identificação de possíveis
-# incompatibilidades com a biblioteca ICU.
-RUN docker-php-ext-configure intl
-
-# ----------------------------------------------------------------------
-# Extensões PHP adicionais
+# Extensões PHP
 # ----------------------------------------------------------------------
 # intl:
 #   Internacionalização, moedas, datas e normalização Unicode.
 #
 # pdo_mysql:
-#   Driver PDO para conexão com MySQL e MariaDB.
+#   Driver PDO utilizado para conexões com MySQL e MariaDB.
 #
 # zip:
 #   Manipulação de arquivos ZIP.
 #
-# O OPcache não aparece nesta lista porque, desde o PHP 8.5,
-# ele faz parte obrigatoriamente do PHP e não deve ser compilado
+# No PHP 8.5, o OPcache já faz parte do PHP e não deve ser compilado
 # novamente com docker-php-ext-install.
 RUN docker-php-ext-install -j"$(nproc)" \
     intl \
@@ -86,39 +93,33 @@ RUN docker-php-ext-install -j"$(nproc)" \
 # ----------------------------------------------------------------------
 # Limpeza das dependências de compilação
 # ----------------------------------------------------------------------
-# Remove os pacotes utilizados apenas durante a compilação.
-# As bibliotecas necessárias durante a execução permanecem instaladas.
 RUN apk del .build-deps \
     && rm -rf /tmp/*
 
 # ----------------------------------------------------------------------
 # Composer
 # ----------------------------------------------------------------------
-# Copia somente o executável do Composer do estágio auxiliar.
+# Copia somente o executável do estágio auxiliar.
 COPY --from=composer /usr/bin/composer /usr/local/bin/composer
 
 # ----------------------------------------------------------------------
 # Configuração personalizada do PHP
 # ----------------------------------------------------------------------
-# O PHP carrega automaticamente arquivos INI presentes em conf.d.
-# O prefixo 99 faz o arquivo ser carregado depois das configurações padrão.
+# Arquivos presentes em conf.d são carregados automaticamente.
 COPY docker/php/php.ini /usr/local/etc/php/conf.d/99-app.ini
 
 # ----------------------------------------------------------------------
 # Diretório de trabalho
 # ----------------------------------------------------------------------
-# Os comandos executados no contêiner partirão deste diretório.
 WORKDIR /var/www/html
 
 # ----------------------------------------------------------------------
-# Porta interna
+# Porta interna do PHP-FPM
 # ----------------------------------------------------------------------
-# Esta instrução apenas documenta a porta utilizada pelo PHP-FPM.
-# Ela não publica a porta no Linux Mint.
+# EXPOSE documenta a porta, mas não a publica no Linux Mint.
 EXPOSE 9000
 
 # ----------------------------------------------------------------------
 # Processo principal
 # ----------------------------------------------------------------------
-# Executa o PHP-FPM em primeiro plano.
 CMD ["php-fpm", "-F"]
