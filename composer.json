@@ -41,5 +41,8 @@
         "refresh-autoload": [
             "@composer dump-autoload"
         ]
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^13.4"
     }
 }

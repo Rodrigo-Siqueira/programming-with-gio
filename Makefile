@@ -1,5 +1,5 @@
 # ======================================================================
-# PHP Docker Starter
+# Programming with Gio
 # Atalhos para gerenciamento do ambiente de desenvolvimento
 # ======================================================================
 #
@@ -29,8 +29,15 @@ PHP_SERVICE := php
 # Nome do serviço Nginx definido no compose.yaml.
 NGINX_SERVICE := nginx
 
-# Comando usado para executar processos no contêiner PHP ativo.
-PHP_EXEC := $(DOCKER_COMPOSE) exec $(PHP_SERVICE)
+# Nome do serviço MySQL definido no compose.yaml.
+MYSQL_SERVICE := mysql
+
+# Executa comandos PHP com o usuário www-data.
+#
+# O UID e o GID do www-data foram alinhados aos do usuário do host
+# durante a construção da imagem. Isso evita arquivos pertencentes
+# ao root e avisos de propriedade do Git.
+PHP_EXEC := $(DOCKER_COMPOSE) exec --user www-data $(PHP_SERVICE)
 
 # Comando usado para executar o Composer no contêiner PHP.
 COMPOSER := $(PHP_EXEC) composer
@@ -40,81 +47,88 @@ COMPOSER := $(PHP_EXEC) composer
 # Configuração padrão
 # ----------------------------------------------------------------------
 
-# Executa "help" quando o comando "make" for chamado sem argumentos.
+# Executa "help" quando o make for chamado sem argumentos.
 .DEFAULT_GOAL := help
 
 
 # ----------------------------------------------------------------------
 # Alvos que não representam arquivos
 # ----------------------------------------------------------------------
-# Esta declaração impede que um arquivo chamado "up", "build" ou
-# semelhante faça o Make considerar o alvo como já concluído.
+
 .PHONY: help setup env config build rebuild up start stop down restart \
-        recreate ps logs logs-php logs-nginx shell php-version \
-        composer-version install update dump-autoload validate \
-        check-platform check audit nginx-test php-config clean
+        recreate ps logs logs-php logs-nginx logs-mysql shell mysql-shell \
+        php-version composer-version install require require-dev remove \
+        update dump-autoload validate check-platform check audit \
+        nginx-test php-config clean
 
 
-# ----------------------------------------------------------------------
-# Ajuda
-# ----------------------------------------------------------------------
+# ======================================================================
+# AJUDA
+# ======================================================================
 
 help:
 	@printf '%s\n' \
 		'' \
-		'PHP Docker Starter' \
+		'Programming with Gio' \
 		'' \
 		'Preparação:' \
-		'  make setup             Prepara o .env, constrói e inicia o ambiente' \
-		'  make env               Cria o .env quando ele ainda não existir' \
-		'  make config            Valida o compose.yaml' \
+		'  make setup                         Prepara e inicia todo o ambiente' \
+		'  make env                           Cria o .env quando ele não existir' \
+		'  make config                        Valida o compose.yaml' \
 		'' \
 		'Ambiente Docker:' \
-		'  make build             Constrói as imagens' \
-		'  make rebuild           Reconstrói as imagens sem utilizar cache' \
-		'  make up                Inicia os serviços em segundo plano' \
-		'  make start             Inicia serviços que estejam parados' \
-		'  make stop              Para os serviços sem removê-los' \
-		'  make down              Para e remove os serviços' \
-		'  make restart           Reinicia todo o ambiente' \
-		'  make recreate          Recria os contêineres' \
-		'  make ps                Exibe o estado dos serviços' \
+		'  make build                         Constrói as imagens' \
+		'  make rebuild                       Reconstrói as imagens sem cache' \
+		'  make up                            Inicia os serviços' \
+		'  make start                         Inicia contêineres existentes' \
+		'  make stop                          Para os serviços sem removê-los' \
+		'  make down                          Para e remove os contêineres' \
+		'  make restart                       Reinicia os serviços' \
+		'  make recreate                      Recria os contêineres' \
+		'  make ps                            Exibe o estado dos serviços' \
 		'' \
 		'Logs:' \
-		'  make logs              Acompanha os logs de todos os serviços' \
-		'  make logs-php          Acompanha somente os logs do PHP' \
-		'  make logs-nginx        Acompanha somente os logs do Nginx' \
+		'  make logs                          Acompanha todos os logs' \
+		'  make logs-php                      Acompanha os logs do PHP' \
+		'  make logs-nginx                    Acompanha os logs do Nginx' \
+		'  make logs-mysql                    Acompanha os logs do MySQL' \
 		'' \
 		'PHP e Composer:' \
-		'  make shell             Abre o terminal do contêiner PHP' \
-		'  make php-version       Exibe a versão do PHP' \
-		'  make composer-version  Exibe a versão do Composer' \
-		'  make install           Instala as dependências do Composer' \
-		'  make update            Atualiza as dependências do Composer' \
-		'  make dump-autoload     Regenera o autoload do Composer' \
+		'  make shell                         Abre o shell do contêiner PHP' \
+		'  make php-version                   Exibe a versão do PHP' \
+		'  make composer-version              Exibe a versão do Composer' \
+		'  make install                       Instala as dependências' \
+		'  make require package=x             Instala um pacote da aplicação' \
+		'  make require-dev package=x         Instala um pacote de desenvolvimento' \
+		'  make remove package=x              Remove um pacote' \
+		'  make update                        Atualiza as dependências' \
+		'  make dump-autoload                 Regenera o autoload' \
+		'' \
+		'MySQL:' \
+		'  make mysql-shell                   Abre o cliente MySQL' \
 		'' \
 		'Validações:' \
-		'  make validate          Valida o composer.json' \
-		'  make check-platform    Verifica PHP e extensões necessárias' \
-		'  make check             Executa as verificações do projeto' \
-		'  make audit             Audita vulnerabilidades conhecidas' \
-		'  make nginx-test        Valida a configuração do Nginx' \
-		'  make php-config        Exibe os arquivos INI carregados' \
+		'  make validate                      Valida o composer.json' \
+		'  make check-platform                Verifica PHP e extensões' \
+		'  make check                         Executa as verificações do projeto' \
+		'  make audit                         Audita vulnerabilidades conhecidas' \
+		'  make nginx-test                    Valida a configuração do Nginx' \
+		'  make php-config                    Exibe os arquivos INI carregados' \
 		'' \
 		'Limpeza:' \
-		'  make clean             Remove contêineres, redes e volumes locais' \
+		'  make clean                         Remove contêineres, redes e volumes' \
+		'                                     ATENÇÃO: apaga o banco MySQL local' \
 		''
 
 
-# ----------------------------------------------------------------------
-# Preparação inicial
-# ----------------------------------------------------------------------
+# ======================================================================
+# PREPARAÇÃO INICIAL
+# ======================================================================
 
-# Executa a preparação completa para uma nova instalação.
+# Executa a preparação completa:
 #
-# Ordem:
-# 1. cria o arquivo .env quando necessário;
-# 2. valida o compose.yaml;
+# 1. cria o .env quando necessário;
+# 2. valida o Compose;
 # 3. constrói as imagens;
 # 4. inicia os serviços;
 # 5. instala as dependências PHP.
@@ -127,9 +141,9 @@ setup: env config build up install
 		''
 
 
-# Cria o arquivo .env somente quando ele ainda não existir.
+# Cria o .env somente quando ele ainda não existir.
 #
-# O arquivo existente nunca será sobrescrito automaticamente.
+# Um arquivo existente nunca será sobrescrito automaticamente.
 env:
 	@if [ -f .env ]; then \
 		echo 'O arquivo .env já existe.'; \
@@ -139,9 +153,9 @@ env:
 	fi
 
 
-# ----------------------------------------------------------------------
-# Docker Compose
-# ----------------------------------------------------------------------
+# ======================================================================
+# DOCKER COMPOSE
+# ======================================================================
 
 # Valida a sintaxe e a resolução do compose.yaml.
 config:
@@ -154,9 +168,9 @@ build:
 	$(DOCKER_COMPOSE) build
 
 
-# Reconstrói todas as imagens sem utilizar o cache.
+# Reconstrói todas as imagens sem utilizar cache.
 #
-# Este comando pode demorar porque recompila as extensões PHP.
+# Esse processo pode demorar porque recompila as extensões PHP.
 rebuild:
 	$(DOCKER_COMPOSE) build --no-cache --progress=plain
 
@@ -176,9 +190,9 @@ stop:
 	$(DOCKER_COMPOSE) stop
 
 
-# Para e remove contêineres e redes criados pelo Compose.
+# Para e remove os contêineres e a rede do projeto.
 #
-# Os arquivos do projeto não são removidos.
+# O volume do MySQL e seus dados são preservados.
 down:
 	$(DOCKER_COMPOSE) down
 
@@ -188,7 +202,7 @@ restart:
 	$(DOCKER_COMPOSE) restart
 
 
-# Recria os contêineres preservando as imagens existentes.
+# Recria os contêineres preservando imagens e volumes.
 recreate:
 	$(DOCKER_COMPOSE) up -d --force-recreate
 
@@ -198,32 +212,37 @@ ps:
 	$(DOCKER_COMPOSE) ps
 
 
-# ----------------------------------------------------------------------
-# Logs
-# ----------------------------------------------------------------------
+# ======================================================================
+# LOGS
+# ======================================================================
 
 # Acompanha os logs de todos os serviços.
 #
-# Use Ctrl+C para sair sem parar os contêineres.
+# Use Ctrl+C para sair. Os contêineres continuarão em execução.
 logs:
 	$(DOCKER_COMPOSE) logs --follow --tail=100
 
 
-# Acompanha somente os logs do serviço PHP.
+# Acompanha somente os logs do PHP.
 logs-php:
 	$(DOCKER_COMPOSE) logs --follow --tail=100 $(PHP_SERVICE)
 
 
-# Acompanha somente os logs do serviço Nginx.
+# Acompanha somente os logs do Nginx.
 logs-nginx:
 	$(DOCKER_COMPOSE) logs --follow --tail=100 $(NGINX_SERVICE)
 
 
-# ----------------------------------------------------------------------
-# PHP e Composer
-# ----------------------------------------------------------------------
+# Acompanha somente os logs do MySQL.
+logs-mysql:
+	$(DOCKER_COMPOSE) logs --follow --tail=100 $(MYSQL_SERVICE)
 
-# Abre o shell disponível na imagem Alpine do contêiner PHP.
+
+# ======================================================================
+# PHP
+# ======================================================================
+
+# Abre o shell disponível na imagem Alpine do PHP.
 shell:
 	$(PHP_EXEC) sh
 
@@ -233,7 +252,16 @@ php-version:
 	$(PHP_EXEC) php --version
 
 
-# Exibe a versão do Composer instalada na imagem PHP.
+# Exibe os arquivos de configuração carregados pelo PHP.
+php-config:
+	$(PHP_EXEC) php --ini
+
+
+# ======================================================================
+# COMPOSER
+# ======================================================================
+
+# Exibe a versão do Composer.
 composer-version:
 	$(COMPOSER) --version
 
@@ -243,10 +271,52 @@ install:
 	$(COMPOSER) install
 
 
-# Atualiza as dependências e modifica o composer.lock.
+# Instala uma dependência utilizada pela aplicação.
 #
-# Use este comando intencionalmente. Para instalações normais,
-# prefira "make install".
+# Exemplo:
+#
+# make require package=ramsey/uuid
+require:
+	@test -n "$(package)" || { \
+		echo 'Informe o pacote que deseja instalar.'; \
+		echo 'Exemplo: make require package=ramsey/uuid'; \
+		exit 1; \
+	}
+	$(COMPOSER) require "$(package)"
+
+
+# Instala uma dependência usada somente no desenvolvimento.
+#
+# Exemplo:
+#
+# make require-dev package=phpunit/phpunit
+require-dev:
+	@test -n "$(package)" || { \
+		echo 'Informe o pacote de desenvolvimento.'; \
+		echo 'Exemplo: make require-dev package=phpunit/phpunit'; \
+		exit 1; \
+	}
+	$(COMPOSER) require --dev "$(package)"
+
+
+# Remove um pacote do projeto.
+#
+# Exemplo:
+#
+# make remove package=ramsey/uuid
+remove:
+	@test -n "$(package)" || { \
+		echo 'Informe o pacote que deseja remover.'; \
+		echo 'Exemplo: make remove package=ramsey/uuid'; \
+		exit 1; \
+	}
+	$(COMPOSER) remove "$(package)"
+
+
+# Atualiza todas as dependências permitidas pelo composer.json.
+#
+# Esse comando modifica o composer.lock.
+# Para uma instalação normal, prefira "make install".
 update:
 	$(COMPOSER) update
 
@@ -256,16 +326,32 @@ dump-autoload:
 	$(COMPOSER) dump-autoload
 
 
-# ----------------------------------------------------------------------
-# Validações e segurança
-# ----------------------------------------------------------------------
+# ======================================================================
+# MYSQL
+# ======================================================================
+
+# Abre o cliente MySQL utilizando o usuário e o banco definidos
+# dentro do contêiner MySQL.
+#
+# A senha é lida da variável MYSQL_PASSWORD do próprio contêiner.
+mysql-shell:
+	$(DOCKER_COMPOSE) exec $(MYSQL_SERVICE) sh -c \
+		'mysql \
+			--user="$$MYSQL_USER" \
+			--password="$$MYSQL_PASSWORD" \
+			"$$MYSQL_DATABASE"'
+
+
+# ======================================================================
+# VALIDAÇÕES E SEGURANÇA
+# ======================================================================
 
 # Valida a estrutura e a consistência do composer.json.
 validate:
 	$(COMPOSER) validate --strict
 
 
-# Verifica a versão do PHP e as extensões exigidas pelo projeto.
+# Verifica a versão do PHP e as extensões exigidas.
 check-platform:
 	$(COMPOSER) check-platform-reqs
 
@@ -275,13 +361,13 @@ check:
 	$(COMPOSER) check
 
 
-# Verifica vulnerabilidades conhecidas nas dependências externas.
+# Verifica vulnerabilidades nas dependências externas.
 #
 # Quando o composer.lock não contém pacotes externos, a auditoria
 # é ignorada porque não há dependências para verificar.
 #
-# Quando houver pacotes, o código de saída do Composer será preservado.
-# Assim, vulnerabilidades reais continuarão fazendo o comando falhar.
+# Quando houver pacotes, o código de saída do Composer será mantido.
+# Vulnerabilidades ou erros reais continuarão fazendo o alvo falhar.
 audit:
 	@if $(PHP_EXEC) php -r '$$lock = json_decode(file_get_contents("composer.lock"), true); exit(empty($$lock["packages"]) && empty($$lock["packages-dev"]) ? 0 : 1);'; then \
 		echo 'Nenhum pacote externo encontrado. Auditoria não necessária.'; \
@@ -290,27 +376,37 @@ audit:
 	fi
 
 
-# Valida a configuração do Nginx dentro do contêiner ativo.
+# Valida a configuração do Nginx.
 nginx-test:
 	$(DOCKER_COMPOSE) exec $(NGINX_SERVICE) nginx -t
 
 
-# Exibe os arquivos de configuração carregados pelo PHP.
-php-config:
-	$(PHP_EXEC) php --ini
+# ======================================================================
+# LIMPEZA
+# ======================================================================
 
-
-# ----------------------------------------------------------------------
-# Limpeza
-# ----------------------------------------------------------------------
-
-# Remove contêineres, redes e volumes locais criados pelo Compose.
+# Remove:
 #
-# Este comando não remove:
+# - contêineres;
+# - rede do projeto;
+# - contêineres órfãos;
+# - volumes Docker do projeto.
 #
-# - arquivos do projeto;
-# - imagens Docker;
-# - dependências em vendor;
-# - composer.lock.
+# ATENÇÃO:
+#
+# Como o MySQL utiliza o volume mysql-data, este comando também
+# apagará permanentemente o banco de dados local.
+#
+# Para desligar preservando o banco, utilize:
+#
+# make down
 clean:
+	@printf '%s\n' \
+		'ATENÇÃO: este comando removerá os volumes e apagará o banco MySQL local.'
+	@printf 'Digite REMOVER para continuar: '
+	@read confirmation; \
+	if [ "$$confirmation" != 'REMOVER' ]; then \
+		echo 'Limpeza cancelada.'; \
+		exit 1; \
+	fi
 	$(DOCKER_COMPOSE) down --volumes --remove-orphans
